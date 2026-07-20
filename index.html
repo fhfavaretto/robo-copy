@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controle Projeto — Chamados Dahuer</title>
+  <meta name="description" content="Controle de chamados do projeto Dahuer — substituto da planilha." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --bg-elev: #171e26;
+      --bg-row: #1a222c;
+      --bg-row-alt: #141b23;
+      --border: #2a3542;
+      --border-strong: #3d4d5f;
+      --text: #e8eef4;
+      --muted: #8b9aab;
+      --accent: #e8a03a;
+      --accent-dim: rgba(232, 160, 58, 0.15);
+      --fabio: #3d9cf0;
+      --fabio-bg: rgba(61, 156, 240, 0.14);
+      --terceiros: #c9843a;
+      --terceiros-bg: rgba(201, 132, 58, 0.16);
+      --usuario: #5cb88a;
+      --usuario-bg: rgba(92, 184, 138, 0.14);
+      --danger: #e06c75;
+      --danger-bg: rgba(224, 108, 117, 0.12);
+      --radius: 10px;
+      --font: "IBM Plex Sans", sans-serif;
+      --mono: "IBM Plex Mono", monospace;
+      --serif: "Source Serif 4", Georgia, serif;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, rgba(232, 160, 58, 0.08), transparent 50%),
+        radial-gradient(ellipse 60% 40% at 90% 0%, rgba(61, 156, 240, 0.06), transparent 45%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    header.app-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+
+    .brand h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      margin-top: 0.4rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+      max-width: 36rem;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    button, .btn {
+      font-family: var(--font);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elev);
+      color: var(--text);
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+
+    button:hover, .btn:hover {
+      background: #212a35;
+      border-color: #516275;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    button.primary {
+      background: var(--accent);
+      border-color: #c88828;
+      color: #1a1208;
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: #f0b04a;
+      border-color: #e8a03a;
+    }
+
+    button.ghost-danger {
+      color: var(--danger);
+      border-color: transparent;
+      background: transparent;
+    }
+
+    button.ghost-danger:hover {
+      background: var(--danger-bg);
+      border-color: rgba(224, 108, 117, 0.35);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 800px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .stat {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.9rem 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+
+    .stat[data-tone="fabio"]::before { background: var(--fabio); }
+    .stat[data-tone="terceiros"]::before { background: var(--terceiros); }
+    .stat[data-tone="usuario"]::before { background: var(--usuario); }
+
+    .stat .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat .value {
+      font-family: var(--mono);
+      font-size: 1.65rem;
+      font-weight: 500;
+      margin-top: 0.15rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .search {
+      flex: 1 1 220px;
+      min-width: 180px;
+      position: relative;
+    }
+
+    .search input,
+    select.filter,
+    .modal input,
+    .modal textarea,
+    .modal select {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      outline: none;
+    }
+
+    .search input:focus,
+    select.filter:focus,
+    .modal input:focus,
+    .modal textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    select.filter {
+      width: auto;
+      min-width: 160px;
+      cursor: pointer;
+    }
+
+    .table-shell {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      min-width: 980px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #1e2732;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: left;
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--border-strong);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr {
+      background: var(--bg-row);
+      transition: background 0.12s;
+    }
+
+    tbody tr:nth-child(even) { background: var(--bg-row-alt); }
+    tbody tr:hover { background: #222c38; }
+
+    .num {
+      font-family: var(--mono);
+      font-weight: 500;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .titulo {
+      font-weight: 500;
+      max-width: 260px;
+    }
+
+    .resumo {
+      color: var(--muted);
+      max-width: 280px;
+      font-size: 0.82rem;
+    }
+
+    .usuario { white-space: nowrap; }
+
+    .flag-cell { text-align: center; width: 72px; }
+
+    .flag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: transparent;
+      transition: all 0.12s;
+    }
+
+    .flag:hover { border-color: var(--border-strong); color: var(--muted); }
+    .flag.on { color: #fff; font-weight: 600; }
+
+    .flag.fabio.on { background: var(--fabio); border-color: var(--fabio); }
+    .flag.terceiros.on { background: var(--terceiros); border-color: var(--terceiros); }
+    .flag.usuario.on { background: var(--usuario); border-color: var(--usuario); }
+
+    .objetivo-tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.04em;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(232, 160, 58, 0.3);
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .row-actions button {
+      padding: 0.3rem 0.55rem;
+      font-size: 0.75rem;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--muted);
+    }
+
+    .footer-note {
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      justify-content: space-between;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      background: #243040;
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      font-size: 0.85rem;
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 100;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 10, 14, 0.72);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--bg-elev);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      width: min(560px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.35rem 1.4rem 1.2rem;
+      box-shadow: var(--shadow);
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.2s;
+    }
+
+    .overlay.open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal h2 {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .form-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 520px) {
+      .form-row-2 { grid-template-columns: 1fr; }
+    }
+
+    .checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.1rem;
+      padding: 0.55rem 0;
+    }
+
+    .checks label {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1.15rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .dot.fabio { background: var(--fabio); }
+    .dot.terceiros { background: var(--terceiros); }
+    .dot.usuario { background: var(--usuario); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="app-header">
+      <div class="brand">
+        <div class="eyebrow">Projeto Dahuer</div>
+        <h1>Controle de Chamados</h1>
+        <p>Substituição da planilha de controle — filtros, edição e exportação, 100% estático no GitHub Pages.</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="btnExportCsv">Exportar CSV</button>
+        <button type="button" id="btnExportJson">Exportar JSON</button>
+        <button type="button" id="btnImport">Importar JSON</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <button type="button" class="primary" id="btnAdd">+ Novo chamado</button>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="Resumo">
+      <div class="stat">
+        <div class="label">Total</div>
+        <div class="value" id="statTotal">0</div>
+      </div>
+      <div class="stat" data-tone="fabio">
+        <div class="label">Pendente Fabio</div>
+        <div class="value" id="statFabio">0</div>
+      </div>
+      <div class="stat" data-tone="terceiros">
+        <div class="label">Pendente terceiros</div>
+        <div class="value" id="statTerceiros">0</div>
+      </div>
+      <div class="stat" data-tone="usuario">
+        <div class="label">Pendente usuário</div>
+        <div class="value" id="statUsuario">0</div>
+      </div>
+    </section>
+
+    <div class="legend">
+      <span><i class="dot fabio"></i> Pendente Fabio</span>
+      <span><i class="dot terceiros"></i> Pendente com terceiros</span>
+      <span><i class="dot usuario"></i> Pendente usuário</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <input type="search" id="search" placeholder="Buscar por usuário, título, número, resumo…" autocomplete="off" />
+      </div>
+      <select class="filter" id="filterPendencia" aria-label="Filtrar pendência">
+        <option value="todos">Todas as pendências</option>
+        <option value="fabio">Pendente Fabio</option>
+        <option value="terceiros">Pendente terceiros</option>
+        <option value="usuario">Pendente usuário</option>
+        <option value="desenvolver">Objetivo: DESENVOLVER</option>
+      </select>
+      <button type="button" id="btnResetSeed" title="Restaura os dados originais da planilha">Restaurar planilha</button>
+    </div>
+
+    <div class="table-shell">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Usuário</th>
+              <th>Título</th>
+              <th class="flag-cell">Fabio</th>
+              <th class="flag-cell">Terceiros</th>
+              <th class="flag-cell">Usuário</th>
+              <th>Resumo</th>
+              <th>Objetivo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty" hidden>Nenhum chamado encontrado com os filtros atuais.</div>
+    </div>
+
+    <div class="footer-note">
+      <span>Alterações ficam salvas neste navegador (localStorage). Use exportar para backup.</span>
+      <span id="saveHint"></span>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h2 id="modalTitle">Novo chamado</h2>
+      <form class="form-grid" id="form">
+        <input type="hidden" id="editId" />
+        <div class="form-row-2">
+          <label>
+            Número
+            <input id="fNumero" required placeholder="ex: 4090" />
+          </label>
+          <label>
+            Usuário
+            <input id="fUsuario" required placeholder="Nome do solicitante" />
+          </label>
+        </div>
+        <label>
+          Título
+          <input id="fTitulo" required placeholder="Título do chamado" />
+        </label>
+        <label>
+          Resumo
+          <textarea id="fResumo" rows="3" placeholder="Descrição / contexto"></textarea>
+        </label>
+        <label>
+          Objetivo
+          <input id="fObjetivo" placeholder="ex: DESENVOLVER" list="objetivos" />
+          <datalist id="objetivos">
+            <option value="DESENVOLVER"></option>
+          </datalist>
+        </label>
+        <div class="checks">
+          <label><input type="checkbox" id="fFabio" /> Pendente Fabio</label>
+          <label><input type="checkbox" id="fTerceiros" /> Pendente com terceiros</label>
+          <label><input type="checkbox" id="fUsuarioPend" /> Pendente usuário</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost-danger" id="btnDelete" hidden>Excluir</button>
+          <button type="button" id="btnCancel">Cancelar</button>
+          <button type="submit" class="primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const STORAGE_KEY = "dahuer-chamados-v1";
+
+    const SEED = [
+      {"usuario":"Diego Gomes","titulo":"Tela de integração Protheus x Log Smart","numero":"2708","pendenteFabio":false,"pendenteTerceiros":true,"pendenteUsuario":false,"resumo":"","objetivo":""},
+      {"usuario":"Gabrielle Oliveira Laurindo","titulo":"Integração TOLEDO","numero":"2841","pendenteFabio":false,"pendenteTerceiros":false,"pendenteUsuario":true,"resumo":"","objetivo":""},
+      {"usuario":"Elisa de Pieri Michalski","titulo":"Pré-cadastro","numero":"3713","pendenteFabio":false,"pendenteTerceiros":false,"pendenteUsuario":true,"resumo":"","objetivo":""},
+      {"usuario":"Daniely Volpato","titulo":"reabertura chamado 3749 INTEGRACAO GRUPOS ECONOMICO","numero":"4172","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"","objetivo":"DESENVOLVER"},
+      {"usuario":"Bruno Arinelson Corrêa","titulo":"campo novo no relatorio","numero":"3986","pendenteFabio":false,"pendenteTerceiros":false,"pendenteUsuario":true,"resumo":"","objetivo":""},
+      {"usuario":"Eliziane Moraes Ribas","titulo":"Lista mestra","numero":"3746","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Na lista mestra apresentar a data de expiração do documento e numero de revisao","objetivo":"DESENVOLVER"},
+      {"usuario":"Daniely Volpato","titulo":"Campo Grupo econômico","numero":"4109","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"fazer com que quando existir no sistema matriz e filial (mesma raiz de CNPJ) o campo de grupo econômico das filiais sejam espelho da matriz","objetivo":"DESENVOLVER"},
+      {"usuario":"Eliziane Moraes Ribas","titulo":"Qualificação de fornecedores","numero":"4258","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Qualificação de fornecedores no FLUIG","objetivo":""},
+      {"usuario":"Daniely Volpato","titulo":"TIINO Monitora - Processamento","numero":"4068","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"E-mail repetitivo da mesma filial","objetivo":""},
+      {"usuario":"Daniely Volpato","titulo":"Relatório faturamento excel","numero":"3643","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Atualizaçao do Tiino onde não será mais criado grupo econômico para  CNPJs de mesma raiz > precisamos analisar uma forma de poder emitir o relatório quando o grupo for de CNPJ diferentes","objetivo":"DESENVOLVER"},
+      {"usuario":"Daniely Volpato","titulo":"Apontar as prorrogações de titulos","numero":"4159","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Precisamos reter os pedidos no crédito quando acontece a prorrogação de um titulo","objetivo":"DESENVOLVER"},
+      {"usuario":"Daniely Volpato","titulo":"Reabertura chamado 4014 - Relatório de faturamento com erro (4014)","numero":"4089","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Incidente de Erro (um monte de print n entendi nada)","objetivo":""},
+      {"usuario":"Fabio Favaretto","titulo":"Desenvolvimento Fluxo de solicitção de viagens","numero":"4090","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"fluxo desenhado pela amanda","objetivo":"DESENVOLVER"},
+      {"usuario":"Roger Moreira","titulo":"Refatoração do programa pxlogsmart","numero":"4016","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"","objetivo":""},
+      {"usuario":"Carlos Felipe Melies","titulo":"Relatório - Resumo custo de produção","numero":"2434","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"desenvolvimento de um relatório de apoio que sintetize os custos de produção do mês selecionado","objetivo":"DESENVOLVER"},
+      {"usuario":"Renato Freire de Lima","titulo":"REVISAO FONTE TIINO - REJEICAO DE PEDIDO","numero":"3858","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Verificarmos a rotina TIINO no momento da rejeição do pedido o erro da variável lBloqueados abaixo","objetivo":""},
+      {"usuario":"Carlos Felipe Melies","titulo":"Rotina de Movimento Interno - Via CSV","numero":"3843","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"Gostaria que fosse desenvolvido uma rotina do protheus que permitisse a leitura de um CSV e montasse o lançamento desta MI.","objetivo":"DESENVOLVER"},
+      {"usuario":"Daniely Volpato","titulo":"Títulos - confirmação finalização processo","numero":"3808","pendenteFabio":true,"pendenteTerceiros":false,"pendenteUsuario":false,"resumo":"verificar uma forma de visualizarmos quando o processo da atualização dos dados dos títulos protheus x tiino finaliza.","objetivo":"DESENVOLVER"}
+    ];
+
+    let tickets = [];
+    let editIndex = null;
+
+    const $ = (sel) => document.querySelector(sel);
+
+    function uid() {
+      return "t_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    }
+
+    function normalize(list) {
+      return list.map((item) => ({
+        id: item.id || uid(),
+        usuario: String(item.usuario || "").trim(),
+        titulo: String(item.titulo || "").trim(),
+        numero: String(item.numero || "").trim(),
+        pendenteFabio: !!item.pendenteFabio,
+        pendenteTerceiros: !!item.pendenteTerceiros,
+        pendenteUsuario: !!item.pendenteUsuario,
+        resumo: String(item.resumo || "").trim(),
+        objetivo: String(item.objetivo || "").trim(),
+      }));
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          tickets = normalize(JSON.parse(raw));
+          return;
+        }
+      } catch (_) { /* ignore */ }
+      tickets = normalize(SEED);
+      save(false);
+    }
+
+    function save(showToast = true) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
+      const now = new Date();
+      $("#saveHint").textContent =
+        "Salvo às " + now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      if (showToast) toast("Alterações salvas");
+    }
+
+    function toast(msg) {
+      const el = $("#toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 2200);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function filtered() {
+      const q = $("#search").value.trim().toLowerCase();
+      const f = $("#filterPendencia").value;
+      return tickets.filter((t) => {
+        if (f === "fabio" && !t.pendenteFabio) return false;
+        if (f === "terceiros" && !t.pendenteTerceiros) return false;
+        if (f === "usuario" && !t.pendenteUsuario) return false;
+        if (f === "desenvolver" && t.objetivo.toUpperCase() !== "DESENVOLVER") return false;
+        if (!q) return true;
+        const blob = [t.usuario, t.titulo, t.numero, t.resumo, t.objetivo].join(" ").toLowerCase();
+        return blob.includes(q);
+      });
+    }
+
+    function updateStats() {
+      $("#statTotal").textContent = tickets.length;
+      $("#statFabio").textContent = tickets.filter((t) => t.pendenteFabio).length;
+      $("#statTerceiros").textContent = tickets.filter((t) => t.pendenteTerceiros).length;
+      $("#statUsuario").textContent = tickets.filter((t) => t.pendenteUsuario).length;
+    }
+
+    function flagBtn(cls, on, field, id) {
+      return `<button type="button" class="flag ${cls}${on ? " on" : ""}" data-toggle="${field}" data-id="${id}" title="Alternar">${on ? "X" : ""}</button>`;
+    }
+
+    function render() {
+      const list = filtered();
+      const tbody = $("#tbody");
+      const empty = $("#empty");
+      updateStats();
+
+      if (!list.length) {
+        tbody.innerHTML = "";
+        empty.hidden = false;
+        return;
+      }
+      empty.hidden = true;
+
+      tbody.innerHTML = list
+        .map((t) => {
+          const objetivo = t.objetivo
+            ? `<span class="objetivo-tag">${escapeHtml(t.objetivo)}</span>`
+            : "—";
+          return `<tr data-id="${t.id}">
+            <td class="num">#${escapeHtml(t.numero)}</td>
+            <td class="usuario">${escapeHtml(t.usuario)}</td>
+            <td class="titulo">${escapeHtml(t.titulo)}</td>
+            <td class="flag-cell">${flagBtn("fabio", t.pendenteFabio, "pendenteFabio", t.id)}</td>
+            <td class="flag-cell">${flagBtn("terceiros", t.pendenteTerceiros, "pendenteTerceiros", t.id)}</td>
+            <td class="flag-cell">${flagBtn("usuario", t.pendenteUsuario, "pendenteUsuario", t.id)}</td>
+            <td class="resumo">${escapeHtml(t.resumo) || "—"}</td>
+            <td>${objetivo}</td>
+            <td>
+              <div class="row-actions">
+                <button type="button" data-edit="${t.id}">Editar</button>
+              </div>
+            </td>
+          </tr>`;
+        })
+        .join("");
+    }
+
+    function openModal(ticket) {
+      editIndex = ticket ? tickets.findIndex((t) => t.id === ticket.id) : null;
+      $("#modalTitle").textContent = ticket ? "Editar chamado" : "Novo chamado";
+      $("#editId").value = ticket ? ticket.id : "";
+      $("#fNumero").value = ticket ? ticket.numero : "";
+      $("#fUsuario").value = ticket ? ticket.usuario : "";
+      $("#fTitulo").value = ticket ? ticket.titulo : "";
+      $("#fResumo").value = ticket ? ticket.resumo : "";
+      $("#fObjetivo").value = ticket ? ticket.objetivo : "";
+      $("#fFabio").checked = ticket ? ticket.pendenteFabio : false;
+      $("#fTerceiros").checked = ticket ? ticket.pendenteTerceiros : false;
+      $("#fUsuarioPend").checked = ticket ? ticket.pendenteUsuario : false;
+      $("#btnDelete").hidden = !ticket;
+      $("#overlay").classList.add("open");
+      $("#fNumero").focus();
+    }
+
+    function closeModal() {
+      $("#overlay").classList.remove("open");
+      editIndex = null;
+    }
+
+    function download(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function toCsv() {
+      const headers = [
+        "Usuario",
+        "Titulo",
+        "Numero",
+        "Pendente Fabio",
+        "Pendente com terceiros",
+        "Pendente Usuario",
+        "Resumo",
+        "Objetivo",
+      ];
+      const rows = tickets.map((t) =>
+        [
+          t.usuario,
+          t.titulo,
+          t.numero,
+          t.pendenteFabio ? "X" : "",
+          t.pendenteTerceiros ? "X" : "",
+          t.pendenteUsuario ? "X" : "",
+          t.resumo,
+          t.objetivo,
+        ]
+          .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+          .join(",")
+      );
+      return "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    }
+
+    $("#tbody").addEventListener("click", (e) => {
+      const toggle = e.target.closest("[data-toggle]");
+      if (toggle) {
+        const id = toggle.dataset.id;
+        const field = toggle.dataset.toggle;
+        const t = tickets.find((x) => x.id === id);
+        if (!t) return;
+        t[field] = !t[field];
+        save();
+        render();
+        return;
+      }
+      const edit = e.target.closest("[data-edit]");
+      if (edit) {
+        const t = tickets.find((x) => x.id === edit.dataset.edit);
+        if (t) openModal(t);
+      }
+    });
+
+    $("#search").addEventListener("input", render);
+    $("#filterPendencia").addEventListener("change", render);
+
+    $("#btnAdd").addEventListener("click", () => openModal(null));
+    $("#btnCancel").addEventListener("click", closeModal);
+    $("#overlay").addEventListener("click", (e) => {
+      if (e.target === $("#overlay")) closeModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    $("#form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const payload = {
+        id: $("#editId").value || uid(),
+        numero: $("#fNumero").value.trim(),
+        usuario: $("#fUsuario").value.trim(),
+        titulo: $("#fTitulo").value.trim(),
+        resumo: $("#fResumo").value.trim(),
+        objetivo: $("#fObjetivo").value.trim(),
+        pendenteFabio: $("#fFabio").checked,
+        pendenteTerceiros: $("#fTerceiros").checked,
+        pendenteUsuario: $("#fUsuarioPend").checked,
+      };
+      if (editIndex !== null && editIndex >= 0) {
+        tickets[editIndex] = payload;
+      } else {
+        tickets.unshift(payload);
+      }
+      save();
+      closeModal();
+      render();
+    });
+
+    $("#btnDelete").addEventListener("click", () => {
+      if (editIndex === null || editIndex < 0) return;
+      if (!confirm("Excluir este chamado?")) return;
+      tickets.splice(editIndex, 1);
+      save();
+      closeModal();
+      render();
+    });
+
+    $("#btnExportCsv").addEventListener("click", () => {
+      download("chamados-dahuer.csv", toCsv(), "text/csv;charset=utf-8");
+      toast("CSV exportado");
+    });
+
+    $("#btnExportJson").addEventListener("click", () => {
+      download(
+        "chamados-dahuer.json",
+        JSON.stringify(tickets, null, 2),
+        "application/json"
+      );
+      toast("JSON exportado");
+    });
+
+    $("#btnImport").addEventListener("click", () => $("#importFile").click());
+    $("#importFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!Array.isArray(data)) throw new Error("Formato inválido");
+          tickets = normalize(data);
+          save();
+          render();
+          toast("Importação concluída");
+        } catch (err) {
+          alert("Não foi possível importar o JSON: " + err.message);
+        }
+        e.target.value = "";
+      };
+      reader.readAsText(file);
+    });
+
+    $("#btnResetSeed").addEventListener("click", () => {
+      if (!confirm("Restaurar os 18 chamados originais da planilha? Alterações locais serão perdidas.")) return;
+      tickets = normalize(SEED);
+      save();
+      render();
+      toast("Dados da planilha restaurados");
+    });
+
+    load();
+    render();
+  </script>
+</body>
+</html>
