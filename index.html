@@ -538,14 +538,19 @@
       display: flex;
       gap: 0.35rem;
       white-space: nowrap;
+      align-items: center;
     }
 
-    .row-actions button {
+    .row-actions button,
+    .row-actions a.btn-link {
       padding: 0.35rem 0.65rem;
       font-size: 0.75rem;
       background: transparent;
       border-color: transparent;
       color: var(--muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
     }
 
     .row-actions button:hover {
@@ -553,6 +558,30 @@
       border-color: transparent;
       color: var(--accent);
       box-shadow: none;
+    }
+
+    .row-actions a.btn-link {
+      font-family: var(--font);
+      font-weight: 550;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.18s var(--ease), color 0.18s var(--ease);
+    }
+
+    .row-actions a.btn-link:hover {
+      background: rgba(37, 99, 212, 0.1);
+      color: var(--fabio);
+      box-shadow: none;
+    }
+
+    .num a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .num a:hover {
+      text-decoration: underline;
     }
 
     .empty {
@@ -882,17 +911,25 @@
     }
 
     function normalize(list) {
-      return list.map((item) => ({
-        id: item.id || uid(),
-        usuario: String(item.usuario || "").trim(),
-        titulo: String(item.titulo || "").trim(),
-        numero: String(item.numero || "").trim(),
-        pendenteFabio: !!item.pendenteFabio,
-        pendenteTerceiros: !!item.pendenteTerceiros,
-        pendenteUsuario: !!item.pendenteUsuario,
-        resumo: String(item.resumo || "").trim(),
-        objetivo: String(item.objetivo || "").trim(),
-      }));
+      return list.map((item) => {
+        const numero = String(item.numero || "").trim();
+        let link = String(item.link || "").trim();
+        if (!link && numero) {
+          link = "https://suporte.dahuer.com.br/front/ticket.form.php?id=" + encodeURIComponent(numero);
+        }
+        return {
+          id: item.id || uid(),
+          usuario: String(item.usuario || "").trim(),
+          titulo: String(item.titulo || "").trim(),
+          numero,
+          link,
+          pendenteFabio: !!item.pendenteFabio,
+          pendenteTerceiros: !!item.pendenteTerceiros,
+          pendenteUsuario: !!item.pendenteUsuario,
+          resumo: String(item.resumo || "").trim(),
+          objetivo: String(item.objetivo || "").trim(),
+        };
+      });
     }
 
     function isFlag(value) {
@@ -978,6 +1015,7 @@
       const idxUsuario = pickCol(headers, ["usuario", "user"]);
       const idxTitulo = pickCol(headers, ["titulo", "title"]);
       const idxNumero = pickCol(headers, ["numero", "number", "chamado"]);
+      const idxLink = pickCol(headers, ["link", "url", "glpi"]);
       const idxFabio = pickCol(headers, ["pendente fabio", "fabio"]);
       const idxTerceiros = pickCol(headers, ["pendente com terceiros", "terceiros"]);
       const idxUsuarioPend = pickCol(headers, ["pendente usuario"]);
@@ -999,6 +1037,7 @@
             usuario,
             titulo,
             numero,
+            link: get(idxLink),
             pendenteFabio: isFlag(get(idxFabio)),
             pendenteTerceiros: isFlag(get(idxTerceiros)),
             pendenteUsuario: isFlag(get(idxUsuarioPend)),
@@ -1178,8 +1217,14 @@
           const objetivo = t.objetivo
             ? `<span class="objetivo-tag">${escapeHtml(t.objetivo)}</span>`
             : "—";
+          const openBtn = t.link
+            ? `<a class="btn-link" href="${escapeHtml(t.link)}" target="_blank" rel="noopener noreferrer">Abrir chamado</a>`
+            : "";
+          const numCell = t.link
+            ? `<a href="${escapeHtml(t.link)}" target="_blank" rel="noopener noreferrer">#${escapeHtml(t.numero)}</a>`
+            : `#${escapeHtml(t.numero)}`;
           return `<tr data-id="${t.id}">
-            <td class="num">#${escapeHtml(t.numero)}</td>
+            <td class="num">${numCell}</td>
             <td class="usuario">${escapeHtml(t.usuario)}</td>
             <td class="titulo">${escapeHtml(t.titulo)}</td>
             <td class="flag-cell">${flagBtn("fabio", t.pendenteFabio, "pendenteFabio", t.id)}</td>
@@ -1189,6 +1234,7 @@
             <td>${objetivo}</td>
             <td>
               <div class="row-actions">
+                ${openBtn}
                 <button type="button" data-edit="${t.id}">Editar</button>
               </div>
             </td>
@@ -1234,6 +1280,7 @@
         "Usuario",
         "Titulo",
         "Numero",
+        "Link",
         "Pendente Fabio",
         "Pendente com terceiros",
         "Pendente Usuario",
@@ -1245,6 +1292,7 @@
           t.usuario,
           t.titulo,
           t.numero,
+          t.link || "",
           t.pendenteFabio ? "X" : "",
           t.pendenteTerceiros ? "X" : "",
           t.pendenteUsuario ? "X" : "",
@@ -1290,11 +1338,14 @@
 
     $("#form").addEventListener("submit", (e) => {
       e.preventDefault();
+      const prev = editIndex !== null && editIndex >= 0 ? tickets[editIndex] : null;
+      const numero = $("#fNumero").value.trim();
       const payload = {
         id: $("#editId").value || uid(),
-        numero: $("#fNumero").value.trim(),
+        numero,
         usuario: $("#fUsuario").value.trim(),
         titulo: $("#fTitulo").value.trim(),
+        link: (prev && prev.link) || "",
         resumo: $("#fResumo").value.trim(),
         objetivo: $("#fObjetivo").value.trim(),
         pendenteFabio: $("#fFabio").checked,
@@ -1306,6 +1357,7 @@
       } else {
         tickets.unshift(payload);
       }
+      tickets = normalize(tickets);
       save();
       closeModal();
       render();
